@@ -14,32 +14,41 @@ class AboutScreen extends StatelessWidget {
   Future<void> _launchUrl(BuildContext context, String urlString) async {
     final Uri uri = Uri.parse(urlString);
 
+    // Try 1: External Application
     try {
-      final bool launched = await launchUrl(
-        uri,
-        mode: LaunchMode.externalApplication,
-        webOnlyWindowName: '_blank',
-      );
-      if (launched) return;
-    } catch (_) {}
-
-    try {
-      final bool launchedPlatform = await launchUrl(
-        uri,
-        mode: LaunchMode.platformDefault,
-        webOnlyWindowName: '_blank',
-      );
-      if (launchedPlatform) return;
-    } catch (_) {}
-
-    try {
-      await launchUrl(uri);
-    } catch (e) {
-      if (context.mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text('Could not open link: $urlString')),
-        );
+      if (await launchUrl(uri, mode: LaunchMode.externalApplication, webOnlyWindowName: '_blank')) {
+        return;
       }
+    } catch (_) {}
+
+    // Try 2: Platform Default
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.platformDefault, webOnlyWindowName: '_blank')) {
+        return;
+      }
+    } catch (_) {}
+
+    // Try 3: In-App Browser View
+    try {
+      if (await launchUrl(uri, mode: LaunchMode.inAppBrowserView)) {
+        return;
+      }
+    } catch (_) {}
+
+    // Try 4: Direct Fallback
+    try {
+      if (await launchUrl(uri)) {
+        return;
+      }
+    } catch (_) {}
+
+    if (context.mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text('Could not open link: $urlString'),
+          duration: const Duration(seconds: 3),
+        ),
+      );
     }
   }
 
